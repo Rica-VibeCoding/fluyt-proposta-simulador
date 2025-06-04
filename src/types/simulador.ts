@@ -17,6 +17,8 @@ export interface TravamentoConfig {
   valorNegociado: boolean;
   descontoReal: boolean;
   limiteDescontoReal: number;
+  descontoRealFixo: boolean;
+  valorDescontoRealFixo: number;
 }
 
 export interface Simulacao {

@@ -27,16 +27,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="valorBruto">Valor dos Ambientes (R$)</Label>
-          <Input id="valorBruto" type="number" placeholder="50000" value={valorBruto || ''} onChange={e => onValorBrutoChange(Number(e.target.value) || 0)} />
+          <Input id="valorBruto" type="number" value={valorBruto || ''} onChange={e => onValorBrutoChange(Number(e.target.value) || 0)} />
         </div>
         
         <div className="space-y-2">
           <Label htmlFor="desconto">Desconto (%)</Label>
-          <Input id="desconto" type="number" placeholder="20" min="0" max="100" value={desconto || ''} onChange={e => onDescontoChange(Number(e.target.value) || 0)} />
+          <Input id="desconto" type="number" min="0" max="100" value={desconto || ''} onChange={e => onDescontoChange(Number(e.target.value) || 0)} />
         </div>
         
         <div className="space-y-2">
-          <Label>Valor Negociado: R$ {valorNegociado.toFixed(2).replace('.', ',')}</Label>
+          <div className="h-6"></div>
           <Button 
             onClick={onAtualizarSimulacao}
             className="w-full flex items-center gap-2"

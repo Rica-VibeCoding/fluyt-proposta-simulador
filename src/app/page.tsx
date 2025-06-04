@@ -196,6 +196,7 @@ export default function Home() {
           valorRestante={simulacao.valorRestante}
           onEditValorNegociado={editarValorNegociado}
           onEditDescontoReal={editarDescontoReal}
+          isDescontoRealLocked={simulacao.travamentos.descontoRealFixo}
         />
 
         {/* Formas de Pagamento */}
@@ -247,7 +248,6 @@ export default function Home() {
                             ...prev, 
                             valor: Number(e.target.value) || 0
                           }))}
-                          placeholder="10000"
                         />
                       </div>
 
@@ -265,7 +265,6 @@ export default function Home() {
                                 ...prev, 
                                 taxaJuros: Number(e.target.value) || 0
                               }))}
-                              placeholder="2.5"
                             />
                           </div>
                           <div className="space-y-2">
@@ -294,7 +293,6 @@ export default function Home() {
                                 ...prev, 
                                 deflacao: Number(e.target.value) || 0
                               }))}
-                              placeholder="5"
                             />
                           </div>
                           <div className="space-y-2">
@@ -307,7 +305,6 @@ export default function Home() {
                                 ...prev, 
                                 jurosAntecipacao: Number(e.target.value) || 0
                               }))}
-                              placeholder="1.99"
                             />
                           </div>
                         </>
@@ -324,7 +321,6 @@ export default function Home() {
                               ...prev, 
                               custoCapital: Number(e.target.value) || 0
                             }))}
-                            placeholder="1.5"
                           />
                         </div>
                       )}

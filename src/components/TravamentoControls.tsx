@@ -98,6 +98,30 @@ export const TravamentoControls: React.FC<TravamentoControlsProps> = ({
             </div>
           )}
         </div>
+
+        {/* Travamento Desconto Real Fixo */}
+        {travamentos.descontoRealFixo && (
+          <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-300">
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-blue-600 rounded-full flex items-center justify-center">
+                  <Lock className="h-3 w-3 text-white" />
+                </div>
+                <div>
+                  <Label className="font-medium text-blue-800">Desconto Real Travado</Label>
+                  <p className="text-sm text-blue-600">
+                    Fixado em {travamentos.valorDescontoRealFixo.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="px-3 py-2 bg-blue-100 rounded-lg">
+              <span className="text-blue-800 font-semibold">
+                {travamentos.valorDescontoRealFixo.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -13,7 +13,9 @@ export const useSimulador = () => {
     travamentos: {
       valorNegociado: false,
       descontoReal: false,
-      limiteDescontoReal: 25
+      limiteDescontoReal: 25,
+      descontoRealFixo: false,
+      valorDescontoRealFixo: 0
     }
   });
 
@@ -130,6 +132,14 @@ export const useSimulador = () => {
     setSimulacao(prev => {
       const updated = { ...prev, ...updates };
       
+      // Verificar se o desconto real está travado
+      if (updated.travamentos.descontoRealFixo) {
+        console.log(`Desconto real travado em ${updated.travamentos.valorDescontoRealFixo}%, mantendo fixo`);
+        // Se desconto real está travado, não alterar - apenas manter o valor atual
+        // A lógica específica será implementada nas outras funções
+        return updated;
+      }
+      
       // Lógica de travamento do valor negociado
       if (updated.travamentos.valorNegociado) {
         // Se valor negociado está travado, ajusta o desconto quando valor bruto muda
@@ -190,8 +200,8 @@ export const useSimulador = () => {
     });
   }, [redistribuirValores, calcularValorRecebidoForma]);
 
-  const editarDescontoReal = useCallback((novoDescontoReal: number) => {
-    console.log('Editando desconto real para:', novoDescontoReal);
+  const editarDescontoReal = useCallback((novoDescontoReal: number, shouldLock?: boolean) => {
+    console.log('Editando desconto real para:', novoDescontoReal, 'Travar:', shouldLock);
     
     setSimulacao(prev => {
       // Função auxiliar para calcular o desconto real dado um valor negociado
@@ -300,7 +310,12 @@ export const useSimulador = () => {
         formasPagamento: formasRedistribuidas.map(forma => ({
           ...forma,
           valorRecebido: calcularValorRecebidoForma(forma)
-        }))
+        })),
+        travamentos: {
+          ...prev.travamentos,
+          descontoRealFixo: shouldLock || false,
+          valorDescontoRealFixo: shouldLock ? novoDescontoReal : prev.travamentos.valorDescontoRealFixo
+        }
       };
       
       // Recalcular valores derivados

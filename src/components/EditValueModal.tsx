@@ -5,14 +5,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Switch } from './ui/switch';
+import { Lock } from 'lucide-react';
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
 
 interface EditValueModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   currentValue: number;
-  onSave: (newValue: number) => void;
+  onSave: (newValue: number, shouldLock?: boolean) => void;
   isPercentage?: boolean;
+  showLockOption?: boolean;
+  isLocked?: boolean;
 }
 
 export const EditValueModal: React.FC<EditValueModalProps> = ({
@@ -21,18 +32,22 @@ export const EditValueModal: React.FC<EditValueModalProps> = ({
   title,
   currentValue,
   onSave,
-  isPercentage = false
+  isPercentage = false,
+  showLockOption = false,
+  isLocked = false
 }) => {
   const [value, setValue] = useState(currentValue);
+  const [shouldLock, setShouldLock] = useState(isLocked);
 
   useEffect(() => {
     if (isOpen) {
       setValue(currentValue);
+      setShouldLock(isLocked);
     }
-  }, [isOpen, currentValue]);
+  }, [isOpen, currentValue, isLocked]);
 
   const handleSave = () => {
-    onSave(value);
+    onSave(value, showLockOption ? shouldLock : undefined);
     onClose();
   };
 
@@ -71,9 +86,37 @@ export const EditValueModal: React.FC<EditValueModalProps> = ({
               placeholder={isPercentage ? "Digite o novo percentual" : "Digite o novo valor"}
             />
           </div>
+          
+          {showLockOption && (
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={shouldLock}
+                    onCheckedChange={setShouldLock}
+                  />
+                  <div>
+                    <Label className="font-medium">Travar {title}</Label>
+                    <p className="text-sm text-gray-600">
+                      {shouldLock 
+                        ? `Valor fixo em ${isPercentage ? `${value.toFixed(1)}%` : formatCurrency(value)}`
+                        : 'Valor será recalculado automaticamente'
+                      }
+                    </p>
+                  </div>
+                </div>
+                {shouldLock && (
+                  <div className="px-2 py-1 bg-blue-100 rounded text-blue-800 text-sm font-semibold flex items-center gap-1">
+                    <Lock className="h-3 w-3" />
+                    FIXO
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex gap-2">
             <Button onClick={handleSave} className="flex-1">
-              Confirmar
+              {showLockOption && shouldLock ? 'Confirmar e Travar' : 'Confirmar'}
             </Button>
             <Button variant="outline" onClick={onClose} className="flex-1">
               Cancelar

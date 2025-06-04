@@ -12,7 +12,8 @@ interface DashboardProps {
   valorRecebidoTotal: number;
   valorRestante: number;
   onEditValorNegociado?: (novoValor: number) => void;
-  onEditDescontoReal?: (novoDesconto: number) => void;
+  onEditDescontoReal?: (novoDesconto: number, shouldLock?: boolean) => void;
+  isDescontoRealLocked?: boolean;
 }
 export const Dashboard: React.FC<DashboardProps> = ({
   valorBruto,
@@ -21,20 +22,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
   valorRecebidoTotal,
   valorRestante,
   onEditValorNegociado,
-  onEditDescontoReal
+  onEditDescontoReal,
+  isDescontoRealLocked = false
 }) => {
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
     title: string;
     currentValue: number;
-    onSave: (value: number) => void;
+    onSave: (value: number, shouldLock?: boolean) => void;
     isPercentage?: boolean;
+    showLockOption?: boolean;
+    isLocked?: boolean;
   }>({
     isOpen: false,
     title: '',
     currentValue: 0,
     onSave: () => {},
-    isPercentage: false
+    isPercentage: false,
+    showLockOption: false,
+    isLocked: false
   });
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -63,13 +69,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
       statusClass: 'text-gray-500'
     };
   };
-  const openEditModal = (title: string, currentValue: number, onSave: (value: number) => void, isPercentage = false) => {
+  const openEditModal = (title: string, currentValue: number, onSave: (value: number, shouldLock?: boolean) => void, isPercentage = false, showLockOption = false, isLocked = false) => {
     setModalConfig({
       isOpen: true,
       title,
       currentValue,
       onSave,
-      isPercentage
+      isPercentage,
+      showLockOption,
+      isLocked
     });
   };
   const closeModal = () => {
@@ -94,7 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-sm font-medium">Valor Negociado</CardTitle>
-              {onEditValorNegociado && <Button variant="ghost" size="sm" onClick={() => openEditModal('Valor Negociado', valorNegociado, onEditValorNegociado)} className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onEditValorNegociado && <Button variant="ghost" size="sm" onClick={() => openEditModal('Valor Negociado', valorNegociado, (valor) => onEditValorNegociado(valor))} className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Edit className="h-3 w-3" />
                 </Button>}
             </div>
@@ -111,7 +119,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-sm font-medium">Desconto Real</CardTitle>
-              {onEditDescontoReal && <Button variant="ghost" size="sm" onClick={() => openEditModal('Desconto Real', descontoReal, onEditDescontoReal, true)} className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+              {onEditDescontoReal && <Button variant="ghost" size="sm" onClick={() => openEditModal('Desconto Real', descontoReal, onEditDescontoReal, true, true, isDescontoRealLocked)} className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Edit className="h-3 w-3" />
                 </Button>}
             </div>
@@ -151,6 +159,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </Card>
       </div>
 
-      <EditValueModal isOpen={modalConfig.isOpen} onClose={closeModal} title={modalConfig.title} currentValue={modalConfig.currentValue} onSave={modalConfig.onSave} isPercentage={modalConfig.isPercentage} />
+      <EditValueModal 
+        isOpen={modalConfig.isOpen} 
+        onClose={closeModal} 
+        title={modalConfig.title} 
+        currentValue={modalConfig.currentValue} 
+        onSave={modalConfig.onSave} 
+        isPercentage={modalConfig.isPercentage}
+        showLockOption={modalConfig.showLockOption}
+        isLocked={modalConfig.isLocked}
+      />
     </>;
 };
