@@ -28,6 +28,51 @@ interface NovaFormaState {
   dataVencimento: string;
 }
 
+function useCurrencyInput(initialValue: number, onChange: (value: number) => void) {
+  const [display, setDisplay] = useState(
+    initialValue > 0
+      ? initialValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : ''
+  );
+  const [raw, setRaw] = useState(
+    initialValue > 0 ? String(Math.round(initialValue * 100)) : ''
+  );
+
+  React.useEffect(() => {
+    if (initialValue > 0) {
+      const centavos = Math.round(initialValue * 100);
+      setRaw(String(centavos));
+      setDisplay((centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    } else {
+      setRaw('');
+      setDisplay('');
+    }
+  }, [initialValue]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onlyNums = e.target.value.replace(/\D/g, '');
+    setRaw(onlyNums);
+    const valor = onlyNums ? parseInt(onlyNums, 10) : 0;
+    const valorFloat = valor / 100;
+    setDisplay(
+      valorFloat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    );
+    onChange(valorFloat);
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (!raw) setDisplay('');
+  };
+
+  return {
+    value: display,
+    onChange: handleChange,
+    onFocus: handleFocus,
+    inputMode: 'numeric' as const,
+    maxLength: 17,
+  };
+}
+
 export default function Home() {
   const { 
     simulacao, 
@@ -166,6 +211,8 @@ export default function Home() {
     );
   };
 
+  const valorFormaInput = useCurrencyInput(novaForma.valor, (valor) => setNovaForma(prev => ({ ...prev, valor })));
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -242,12 +289,8 @@ export default function Home() {
                       <div className="space-y-2">
                         <Label>Valor (R$)</Label>
                         <Input
-                          type="number"
-                          value={novaForma.valor || ''}
-                          onChange={(e) => setNovaForma(prev => ({ 
-                            ...prev, 
-                            valor: Number(e.target.value) || 0
-                          }))}
+                          type="text"
+                          {...valorFormaInput}
                         />
                       </div>
 

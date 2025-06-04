@@ -26,6 +26,51 @@ interface EditValueModalProps {
   isLocked?: boolean;
 }
 
+function useCurrencyInput(initialValue: number, onChange: (value: number) => void) {
+  const [display, setDisplay] = useState(
+    initialValue > 0
+      ? initialValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : ''
+  );
+  const [raw, setRaw] = useState(
+    initialValue > 0 ? String(Math.round(initialValue * 100)) : ''
+  );
+
+  useEffect(() => {
+    if (initialValue > 0) {
+      const centavos = Math.round(initialValue * 100);
+      setRaw(String(centavos));
+      setDisplay((centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    } else {
+      setRaw('');
+      setDisplay('');
+    }
+  }, [initialValue]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const onlyNums = e.target.value.replace(/\D/g, '');
+    setRaw(onlyNums);
+    const valor = onlyNums ? parseInt(onlyNums, 10) : 0;
+    const valorFloat = valor / 100;
+    setDisplay(
+      valorFloat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    );
+    onChange(valorFloat);
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (!raw) setDisplay('');
+  };
+
+  return {
+    value: display,
+    onChange: handleChange,
+    onFocus: handleFocus,
+    inputMode: 'numeric',
+    maxLength: 17,
+  };
+}
+
 export const EditValueModal: React.FC<EditValueModalProps> = ({
   isOpen,
   onClose,
@@ -45,6 +90,9 @@ export const EditValueModal: React.FC<EditValueModalProps> = ({
       setShouldLock(isLocked);
     }
   }, [isOpen, currentValue, isLocked]);
+
+  // Usar input de moeda se não for percentual
+  const currencyInput = useCurrencyInput(value, setValue);
 
   const handleSave = () => {
     onSave(value, showLockOption ? shouldLock : undefined);
@@ -79,10 +127,13 @@ export const EditValueModal: React.FC<EditValueModalProps> = ({
               {isPercentage ? 'Novo Percentual (%)' : 'Novo Valor (R$)'}
             </Label>
             <Input
-              type="number"
-              step={isPercentage ? "0.1" : "0.01"}
-              value={value || ''}
-              onChange={(e) => setValue(Number(e.target.value) || 0)}
+              type={isPercentage ? "number" : "text"}
+              step={isPercentage ? "0.1" : undefined}
+              value={isPercentage ? value : currencyInput.value}
+              onChange={isPercentage ? (e) => setValue(Number(e.target.value) || 0) : currencyInput.onChange}
+              onFocus={isPercentage ? undefined : currencyInput.onFocus}
+              inputMode={isPercentage ? undefined : "numeric"}
+              maxLength={isPercentage ? undefined : 17}
               placeholder={isPercentage ? "Digite o novo percentual" : "Digite o novo valor"}
             />
           </div>
