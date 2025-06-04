@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { FormaPagamento, Simulacao, TravamentoConfig } from '../types/simulador';
 
 export const useSimulador = () => {
@@ -18,7 +18,7 @@ export const useSimulador = () => {
   });
 
   // Prioridade para redistribuição de valores
-  const PRIORIDADE_FORMAS = ['ENTRADA', 'BOLETO', 'FINANCEIRA', 'CARTAO'];
+  const PRIORIDADE_FORMAS = useMemo(() => ['ENTRADA', 'BOLETO', 'FINANCEIRA', 'CARTAO'], []);
 
   const calcularValorRecebidoForma = useCallback((forma: FormaPagamento): number => {
     console.log('Calculando valor recebido para:', forma);
@@ -115,7 +115,7 @@ export const useSimulador = () => {
     }
     
     return novasFormas;
-  }, []);
+  }, [PRIORIDADE_FORMAS]);
 
   const recalcularSimulacao = useCallback((updates: Partial<Simulacao>) => {
     console.log('Recalculando simulação com updates:', updates);
