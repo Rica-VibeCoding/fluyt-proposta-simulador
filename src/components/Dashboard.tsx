@@ -45,6 +45,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (desconto < 25) return 'text-yellow-600';
     return 'text-red-600';
   };
+  const getValorRestanteStyle = (valor: number) => {
+    if (valor < 0) {
+      return {
+        cardClass: 'border-l-4 border-l-amber-400 bg-amber-50/30',
+        valueClass: 'text-amber-700',
+        statusText: 'Excedeu',
+        statusClass: 'text-amber-600'
+      };
+    }
+    return {
+      cardClass: '',
+      valueClass: '',
+      statusText: 'Alocar',
+      statusClass: 'text-gray-500'
+    };
+  };
   const openEditModal = (title: string, currentValue: number, onSave: (value: number) => void, isPercentage = false) => {
     setModalConfig({
       isOpen: true,
@@ -118,13 +134,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={getValorRestanteStyle(valorRestante).cardClass}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Valor Restante</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(valorRestante)}</div>
-            <p className="text-xs text-gray-500">Alocar</p>
+            <div className={`text-2xl font-bold ${getValorRestanteStyle(valorRestante).valueClass}`}>
+              {formatCurrency(valorRestante)}
+            </div>
+            <p className={`text-xs ${getValorRestanteStyle(valorRestante).statusClass}`}>
+              {getValorRestanteStyle(valorRestante).statusText}
+            </p>
           </CardContent>
         </Card>
       </div>

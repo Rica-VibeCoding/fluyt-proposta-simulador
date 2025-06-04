@@ -27,28 +27,31 @@ export const useSimulador = () => {
       case 'ENTRADA':
         return forma.valor;
       
-      case 'FINANCEIRA':
+      case 'FINANCEIRA': {
         if (!forma.parcelas || !forma.taxaJuros) return forma.valor;
         const i = forma.taxaJuros / 100;
         const parcelas = forma.parcelas;
         const valorPresente = forma.valor / Math.pow(1 + i, parcelas);
         console.log(`Financeira: valor=${forma.valor}, parcelas=${parcelas}, taxa=${forma.taxaJuros}%, VP=${valorPresente}`);
         return valorPresente;
+      }
       
-      case 'CARTAO':
+      case 'CARTAO': {
         if (!forma.deflacao || !forma.jurosAntecipacao || !forma.parcelas) return forma.valor;
         const fatorDeflacao = 1 - (forma.deflacao / 100);
         const fatorJuros = 1 - (forma.jurosAntecipacao / 100 * forma.parcelas);
         const valorRecebido = forma.valor * fatorDeflacao * fatorJuros;
         console.log(`Cartão: valor=${forma.valor}, deflação=${forma.deflacao}%, juros=${forma.jurosAntecipacao}%, VR=${valorRecebido}`);
         return valorRecebido;
+      }
       
-      case 'BOLETO':
+      case 'BOLETO': {
         if (!forma.parcelas || !forma.custoCapital) return forma.valor;
         const ic = forma.custoCapital / 100;
         const valorPresenteBoleto = forma.valor / Math.pow(1 + ic, forma.parcelas);
         console.log(`Boleto: valor=${forma.valor}, parcelas=${forma.parcelas}, custo=${forma.custoCapital}%, VP=${valorPresenteBoleto}`);
         return valorPresenteBoleto;
+      }
       
       default:
         return forma.valor;
@@ -86,35 +89,29 @@ export const useSimulador = () => {
     
     console.log('Formas ordenadas por prioridade:', formasOrdenadas.map(f => f.tipo));
     
-    // Redistribuir a diferença proporcionalmente ou pela primeira forma disponível
+    // Redistribuir a diferença: apenas a primeira forma na ordem de prioridade absorve toda a diferença
     const novasFormas = [...formasAtuais];
     
-    if (formasOrdenadas.length === 1) {
-      // Se só há uma forma não travada, ela absorve toda a diferença
-      const formaIndex = novasFormas.findIndex(f => f.id === formasOrdenadas[0].id);
-      const novoValor = Math.max(0, novasFormas[formaIndex].valor + diferenca);
-      novasFormas[formaIndex] = { ...novasFormas[formaIndex], valor: novoValor };
+    // Verificar se todas as formas não travadas têm valor zero
+    const somaFormasNaoTravadas = formasOrdenadas.reduce((acc, forma) => acc + forma.valor, 0);
+    
+    if (somaFormasNaoTravadas === 0) {
+      // Se todas as formas não travadas têm valor 0, distribui igualmente
+      console.log('Todas as formas não travadas têm valor zero, distribuindo igualmente');
+      const ajustePorForma = diferenca / formasOrdenadas.length;
+      formasOrdenadas.forEach(forma => {
+        const formaIndex = novasFormas.findIndex(f => f.id === forma.id);
+        const novoValor = Math.max(0, ajustePorForma);
+        novasFormas[formaIndex] = { ...novasFormas[formaIndex], valor: novoValor };
+      });
     } else {
-      // Distribuir proporcionalmente entre as formas não travadas
-      const somaFormasNaoTravadas = formasOrdenadas.reduce((acc, forma) => acc + forma.valor, 0);
-      
-      if (somaFormasNaoTravadas > 0) {
-        formasOrdenadas.forEach(forma => {
-          const proporcao = forma.valor / somaFormasNaoTravadas;
-          const ajuste = diferenca * proporcao;
-          const formaIndex = novasFormas.findIndex(f => f.id === forma.id);
-          const novoValor = Math.max(0, forma.valor + ajuste);
-          novasFormas[formaIndex] = { ...novasFormas[formaIndex], valor: novoValor };
-        });
-      } else {
-        // Se todas as formas não travadas têm valor 0, distribui igualmente
-        const ajustePorForma = diferenca / formasOrdenadas.length;
-        formasOrdenadas.forEach(forma => {
-          const formaIndex = novasFormas.findIndex(f => f.id === forma.id);
-          const novoValor = Math.max(0, ajustePorForma);
-          novasFormas[formaIndex] = { ...novasFormas[formaIndex], valor: novoValor };
-        });
-      }
+      // Apenas a primeira forma não travada na ordem de prioridade absorve toda a diferença
+      console.log('Ajustando apenas a primeira forma na ordem de prioridade');
+      const primeiraForma = formasOrdenadas[0];
+      const formaIndex = novasFormas.findIndex(f => f.id === primeiraForma.id);
+      const novoValor = Math.max(0, primeiraForma.valor + diferenca);
+      novasFormas[formaIndex] = { ...novasFormas[formaIndex], valor: novoValor };
+      console.log(`Forma ${primeiraForma.tipo} ajustada de ${primeiraForma.valor} para ${novoValor}`);
     }
     
     return novasFormas;

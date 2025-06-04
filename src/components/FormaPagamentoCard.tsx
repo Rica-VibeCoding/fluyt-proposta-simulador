@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -60,15 +59,18 @@ export const FormaPagamentoCard: React.FC<FormaPagamentoCardProps> = ({
 
   const getDetalhes = () => {
     switch (forma.tipo) {
-      case 'FINANCEIRA':
+      case 'FINANCEIRA': {
         const detalhesFinanceira = `${forma.parcelas}x - ${forma.taxaJuros}% a.m.`;
         return forma.dataVencimento ? 
           `${detalhesFinanceira} - Venc: ${formatDate(forma.dataVencimento)}` : 
           detalhesFinanceira;
-      case 'CARTAO':
+      }
+      case 'CARTAO': {
         return `${forma.parcelas}x - ${forma.deflacao}% deflação`;
-      case 'BOLETO':
+      }
+      case 'BOLETO': {
         return `${forma.parcelas}x - ${forma.custoCapital}% custo`;
+      }
       default:
         return 'À vista';
     }
