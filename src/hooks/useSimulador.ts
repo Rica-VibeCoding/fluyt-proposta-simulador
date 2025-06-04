@@ -101,17 +101,24 @@ export const useSimulador = () => {
       const ajustePorForma = diferenca / formasOrdenadas.length;
       formasOrdenadas.forEach(forma => {
         const formaIndex = novasFormas.findIndex(f => f.id === forma.id);
-        const novoValor = Math.max(0, ajustePorForma);
-        novasFormas[formaIndex] = { ...novasFormas[formaIndex], valor: novoValor };
+        const novoValor = ajustePorForma;
+        novasFormas[formaIndex] = { ...novasFormas[formaIndex], valor: Math.max(0, novoValor) };
+        console.log(`Forma ${forma.tipo} ajustada para: ${novoValor} (final: ${Math.max(0, novoValor)})`);
       });
     } else {
       // Apenas a primeira forma não travada na ordem de prioridade absorve toda a diferença
       console.log('Ajustando apenas a primeira forma na ordem de prioridade');
       const primeiraForma = formasOrdenadas[0];
       const formaIndex = novasFormas.findIndex(f => f.id === primeiraForma.id);
-      const novoValor = Math.max(0, primeiraForma.valor + diferenca);
+      const valorCalculado = primeiraForma.valor + diferenca;
+      const novoValor = Math.max(0, valorCalculado);
       novasFormas[formaIndex] = { ...novasFormas[formaIndex], valor: novoValor };
-      console.log(`Forma ${primeiraForma.tipo} ajustada de ${primeiraForma.valor} para ${novoValor}`);
+      console.log(`Forma ${primeiraForma.tipo} ajustada de ${primeiraForma.valor} para ${valorCalculado} (final: ${novoValor})`);
+      
+      // Se o valor ficou negativo, indicar impossibilidade
+      if (valorCalculado < 0) {
+        console.log(`⚠️ Valor negativo detectado (${valorCalculado}), pode estar no limite de desconto real`);
+      }
     }
     
     return novasFormas;
@@ -205,14 +212,22 @@ export const useSimulador = () => {
       let valorMax = prev.valorBruto;
       let valorNegociadoOtimo = prev.valorNegociado;
       let melhorDiferenca = Infinity;
+      let melhorDesconto = prev.descontoReal;
       
-      // Máximo de 20 iterações para evitar loop infinito
-      for (let i = 0; i < 20; i++) {
+      console.log(`🎯 Iniciando busca binária para desconto real: ${novoDescontoReal}%`);
+      console.log(`Desconto real atual: ${prev.descontoReal}%`);
+      console.log(`Intervalo inicial: ${valorMin} - ${valorMax}`);
+      
+      // Máximo de 25 iterações para maior precisão
+      for (let i = 0; i < 25; i++) {
         const valorTeste = (valorMin + valorMax) / 2;
         const descontoRealCalculado = calcularDescontoRealParaValor(valorTeste);
         
+        console.log(`Iteração ${i + 1}: valorTeste=${valorTeste.toFixed(2)}, desconto=${descontoRealCalculado.toFixed(2)}%`);
+        
         if (descontoRealCalculado === -1) {
           // Erro na redistribuição, tentar valor maior
+          console.log('❌ Erro na redistribuição, ajustando valor mínimo');
           valorMin = valorTeste;
           continue;
         }
@@ -223,24 +238,53 @@ export const useSimulador = () => {
         if (diferenca < melhorDiferenca) {
           melhorDiferenca = diferenca;
           valorNegociadoOtimo = valorTeste;
+          melhorDesconto = descontoRealCalculado;
+          console.log(`✅ Novo melhor resultado: desconto=${melhorDesconto.toFixed(2)}%, diferença=${melhorDiferenca.toFixed(2)}`);
         }
         
         // Se a diferença é muito pequena, parar
-        if (diferenca < 0.1) {
+        if (diferenca < 0.05) {
+          console.log(`🎯 Precisão atingida! Parando busca.`);
+          break;
+        }
+        
+        // Detectar se estamos no limite físico
+        if (i > 10 && melhorDiferenca > 2) {
+          console.log(`⚠️ Possível limite físico detectado. Melhor desconto possível: ${melhorDesconto.toFixed(2)}%`);
           break;
         }
         
         // Ajustar os limites da busca
         if (descontoRealCalculado < novoDescontoReal) {
-          // Desconto muito baixo, diminuir valor negociado
+          // Desconto calculado é menor que o desejado, precisamos diminuir valor negociado
           valorMax = valorTeste;
+          console.log(`📉 Desconto baixo (${descontoRealCalculado.toFixed(2)}% < ${novoDescontoReal}%), diminuindo valorMax para ${valorMax.toFixed(2)}`);
         } else {
-          // Desconto muito alto, aumentar valor negociado
+          // Desconto calculado é maior que o desejado, precisamos aumentar valor negociado
           valorMin = valorTeste;
+          console.log(`📈 Desconto alto (${descontoRealCalculado.toFixed(2)}% > ${novoDescontoReal}%), aumentando valorMin para ${valorMin.toFixed(2)}`);
+        }
+        
+        // Verificar se o intervalo ficou muito pequeno
+        if (Math.abs(valorMax - valorMin) < 100) {
+          console.log(`🔍 Intervalo muito pequeno (${Math.abs(valorMax - valorMin).toFixed(2)}), finalizando busca`);
+          break;
         }
       }
       
-      console.log(`Valor negociado ótimo encontrado: ${valorNegociadoOtimo}`);
+      console.log(`🏁 Busca finalizada:`);
+      console.log(`   Valor negociado ótimo: ${valorNegociadoOtimo.toFixed(2)}`);
+      console.log(`   Desconto real resultante: ${melhorDesconto.toFixed(2)}%`);
+      console.log(`   Diferença do objetivo: ${melhorDiferenca.toFixed(2)}`);
+      
+      // Se a diferença ainda é muito grande, avisar o usuário
+      if (melhorDiferenca > 1) {
+        console.log(`⚠️ Não foi possível atingir exatamente ${novoDescontoReal}%. Melhor resultado: ${melhorDesconto.toFixed(1)}%`);
+        const confirmar = confirm(`Não foi possível atingir exatamente ${novoDescontoReal}% de desconto real.\nMelhor resultado possível: ${melhorDesconto.toFixed(1)}%\n\nDeseja aplicar mesmo assim?`);
+        if (!confirmar) {
+          return prev;
+        }
+      }
       
       // Aplicar o valor negociado ótimo encontrado
       const formasRedistribuidas = redistribuirValores(valorNegociadoOtimo, prev.formasPagamento);
