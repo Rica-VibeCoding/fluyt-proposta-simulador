@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -24,6 +24,12 @@ export const EditValueModal: React.FC<EditValueModalProps> = ({
   isPercentage = false
 }) => {
   const [value, setValue] = useState(currentValue);
+
+  useEffect(() => {
+    if (isOpen) {
+      setValue(currentValue);
+    }
+  }, [isOpen, currentValue]);
 
   const handleSave = () => {
     onSave(value);

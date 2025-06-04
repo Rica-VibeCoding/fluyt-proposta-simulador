@@ -183,35 +183,91 @@ export const useSimulador = () => {
     });
   }, [redistribuirValores, calcularValorRecebidoForma]);
 
-  const editarDescontoReal = useCallback((novoDesconto: number) => {
-    console.log('Editando desconto real para:', novoDesconto);
+  const editarDescontoReal = useCallback((novoDescontoReal: number) => {
+    console.log('Editando desconto real para:', novoDescontoReal);
     
     setSimulacao(prev => {
-      // Calcular novo valor negociado baseado no desconto
-      const novoValorNegociado = prev.valorBruto * (1 - novoDesconto / 100);
+      // Função auxiliar para calcular o desconto real dado um valor negociado
+      const calcularDescontoRealParaValor = (valorNegociado: number): number => {
+        const formasTemp = redistribuirValores(valorNegociado, prev.formasPagamento);
+        if (!formasTemp) return -1; // Indica erro
+        
+        const valorRecebidoTemp = formasTemp.reduce((acc, forma) => {
+          const formaComRecebido = { ...forma, valorRecebido: calcularValorRecebidoForma(forma) };
+          return acc + formaComRecebido.valorRecebido;
+        }, 0);
+        
+        return prev.valorBruto > 0 ? ((prev.valorBruto - valorRecebidoTemp) / prev.valorBruto) * 100 : 0;
+      };
       
-      const formasRedistribuidas = redistribuirValores(novoValorNegociado, prev.formasPagamento);
+      // Busca binária para encontrar o valor negociado que resulta no desconto real desejado
+      let valorMin = 0;
+      let valorMax = prev.valorBruto;
+      let valorNegociadoOtimo = prev.valorNegociado;
+      let melhorDiferenca = Infinity;
+      
+      // Máximo de 20 iterações para evitar loop infinito
+      for (let i = 0; i < 20; i++) {
+        const valorTeste = (valorMin + valorMax) / 2;
+        const descontoRealCalculado = calcularDescontoRealParaValor(valorTeste);
+        
+        if (descontoRealCalculado === -1) {
+          // Erro na redistribuição, tentar valor maior
+          valorMin = valorTeste;
+          continue;
+        }
+        
+        const diferenca = Math.abs(descontoRealCalculado - novoDescontoReal);
+        
+        // Se encontrou um resultado melhor, guardar
+        if (diferenca < melhorDiferenca) {
+          melhorDiferenca = diferenca;
+          valorNegociadoOtimo = valorTeste;
+        }
+        
+        // Se a diferença é muito pequena, parar
+        if (diferenca < 0.1) {
+          break;
+        }
+        
+        // Ajustar os limites da busca
+        if (descontoRealCalculado < novoDescontoReal) {
+          // Desconto muito baixo, diminuir valor negociado
+          valorMax = valorTeste;
+        } else {
+          // Desconto muito alto, aumentar valor negociado
+          valorMin = valorTeste;
+        }
+      }
+      
+      console.log(`Valor negociado ótimo encontrado: ${valorNegociadoOtimo}`);
+      
+      // Aplicar o valor negociado ótimo encontrado
+      const formasRedistribuidas = redistribuirValores(valorNegociadoOtimo, prev.formasPagamento);
       
       if (!formasRedistribuidas) {
-        alert('Não é possível alterar o desconto. Todas as formas de pagamento estão travadas.');
+        alert('Não é possível alterar o desconto real. Todas as formas de pagamento estão travadas.');
         return prev;
       }
       
       const updated = {
         ...prev,
-        desconto: novoDesconto,
-        valorNegociado: novoValorNegociado,
+        valorNegociado: valorNegociadoOtimo,
         formasPagamento: formasRedistribuidas.map(forma => ({
           ...forma,
           valorRecebido: calcularValorRecebidoForma(forma)
         }))
       };
       
+      // Recalcular valores derivados
       updated.valorRecebidoTotal = updated.formasPagamento.reduce((acc, forma) => acc + forma.valorRecebido, 0);
       updated.descontoReal = updated.valorBruto > 0 ? ((updated.valorBruto - updated.valorRecebidoTotal) / updated.valorBruto) * 100 : 0;
       
       const somaFormas = updated.formasPagamento.reduce((acc, forma) => acc + forma.valor, 0);
       updated.valorRestante = updated.valorNegociado - somaFormas;
+      
+      console.log('Simulação atualizada via desconto real:', updated);
+      console.log(`Desconto real resultante: ${updated.descontoReal}%`);
       
       return updated;
     });
