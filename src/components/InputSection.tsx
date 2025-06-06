@@ -55,7 +55,7 @@ function useCurrencyInput(initialValue: number, onChange: (value: number) => voi
     value: display,
     onChange: handleChange,
     onFocus: handleFocus,
-    inputMode: 'numeric',
+    inputMode: 'numeric' as const,
     maxLength: 17,
   };
 }
@@ -73,7 +73,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="valorBruto">Valor dos Ambientes (R$)</Label>
-          <Input id="valorBruto" type="text" inputMode="decimal" {...valorBrutoInput} />
+          <Input id="valorBruto" type="text" {...valorBrutoInput} />
         </div>
         
         <div className="space-y-2">
